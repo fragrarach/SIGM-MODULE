@@ -68,7 +68,10 @@ def add_sql_files():
                 if file.endswith(".sql"):
                     file_path = folder + f'\\{file}'
                     with open(file_path, 'r') as sql_file:
-                        sigm_query.execute(sql_file.read())
+                        if folder == sigm_folder:
+                            sigm_query.execute(sql_file.read())
+                        elif folder == log_folder:
+                            log_query.execute(sql_file.read())
                         print(f'{file} added.')
 
 
