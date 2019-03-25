@@ -54,6 +54,7 @@ def log_conn():
     return conn_log, log_query
 
 
+# Check for and add SQL files for main file
 def add_sql_files():
     script_path = os.path.realpath(__main__.__file__)
     parent = os.path.abspath(os.path.join(script_path, os.pardir))
@@ -69,3 +70,32 @@ def add_sql_files():
                     with open(file_path, 'r') as sql_file:
                         sigm_query.execute(sql_file.read())
                         print(f'{file} added.')
+
+
+# Convert tabular query result to list (2D array)
+def tabular_data(result_set):
+    lines = []
+    for row in result_set:
+        line = []
+        for cell in row:
+            if type(cell) == str:
+                cell = cell.strip()
+            line.append(cell)
+        lines.append(line)
+    return lines
+
+
+# Convert scalar query result to singleton variable of any data type
+def scalar_data(result_set):
+    for row in result_set:
+        for cell in row:
+            if type(cell) == str:
+                cell = cell.strip()
+            return cell
+
+
+# Query production database
+def production_query(sql_exp):
+    sigm_query.execute(sql_exp)
+    result_set = sigm_query.fetchall()
+    return result_set
