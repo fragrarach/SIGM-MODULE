@@ -3,6 +3,11 @@ import psycopg2.extensions
 import __main__
 
 
+# PostgreSQL DB connection configs
+psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
+psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
+
+
 # Check whether app should reference dev or prod server/db
 def dev_check():
     raw_filename = os.path.basename(__main__.__file__)
@@ -15,50 +20,57 @@ def dev_check():
 
 
 # Initialize production DB connection, listen cursor and query cursor
-def sigm_conn(channel=None):
-    global conn_sigm, sigm_query
+def sigm_connect(channel=None):
+    global sigm_connection, sigm_db_cursor
     if dev_check():
         host = '192.168.0.57'
         dbname = 'DEV'
     else:
         host = '192.168.0.250'
         dbname = 'QuatroAir'
-    conn_sigm = psycopg2.connect(f"host='{host}' dbname='{dbname}' user='SIGM' port='5493'")
-    conn_sigm.set_client_encoding("latin1")
-    conn_sigm.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+    sigm_connection = psycopg2.connect(f"host='{host}' dbname='{dbname}' user='SIGM' port='5493'")
+    sigm_connection.set_client_encoding("latin1")
+    sigm_connection.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 
     if channel:
-        sigm_listen = conn_sigm.cursor()
+        sigm_listen = sigm_connection.cursor()
         sigm_listen.execute(f"LISTEN {channel};")
         print(f'Listening to channel {channel} on DB {dbname} at host {host}')
-    sigm_query = conn_sigm.cursor()
+    sigm_db_cursor = sigm_connection.cursor()
     print(f'SIGM cursor open on DB {dbname} at host {host}')
 
-    return conn_sigm, sigm_query
+    return sigm_connection, sigm_db_cursor
 
 
 # Initialize log DB connection, listen cursor and query cursor
-def log_conn():
-    global conn_log, log_query
+def log_connect():
+    global log_connection, log_db_cursor
     if dev_check():
         host = '192.168.0.57'
     else:
         host = '192.168.0.250'
-    conn_log = psycopg2.connect(f"host='{host}' dbname='LOG' user='SIGM' port='5493'")
-    conn_log.set_client_encoding("latin1")
-    conn_log.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+    log_connection = psycopg2.connect(f"host='{host}' dbname='LOG' user='SIGM' port='5493'")
+    log_connection.set_client_encoding("latin1")
+    log_connection.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 
-    log_query = conn_log.cursor()
+    log_db_cursor = log_connection.cursor()
     print(f'Log cursor open on DB LOG at host {host}')
 
-    return conn_log, log_query
+    return log_connection, log_db_cursor
+
+
+# Return containing folder path
+def get_parent():
+    script_path = os.path.realpath(__main__.__file__)
+    parent_path = os.path.abspath(os.path.join(script_path, os.pardir))
+    return parent_path
 
 
 # Check for and add SQL files for main file
 def add_sql_files():
-    script_path = os.path.realpath(__main__.__file__)
-    parent = os.path.abspath(os.path.join(script_path, os.pardir))
-    sql_folder = parent + '\\SUPPORTING FUNCTIONS'
+    parent_path = get_parent()
+    sql_folder = parent_path + '\\SUPPORTING FUNCTIONS'
+    # TODO : Add DEV folder
     sigm_folder = sql_folder + '\\SIGM'
     log_folder = sql_folder + '\\LOG'
     sql_folders = [sigm_folder, log_folder]
@@ -69,9 +81,9 @@ def add_sql_files():
                     file_path = folder + f'\\{file}'
                     with open(file_path, 'r') as sql_file:
                         if folder == sigm_folder:
-                            sigm_query.execute(sql_file.read())
+                            sigm_db_cursor.execute(sql_file.read())
                         elif folder == log_folder:
-                            log_query.execute(sql_file.read())
+                            log_db_cursor.execute(sql_file.read())
                         print(f'{file} added.')
 
 
@@ -97,8 +109,15 @@ def scalar_data(result_set):
             return cell
 
 
-# Query production database
-def production_query(sql_exp):
-    sigm_query.execute(sql_exp)
-    result_set = sigm_query.fetchall()
+# Query SIGM database
+def sigm_db_query(sql_exp):
+    sigm_db_cursor.execute(sql_exp)
+    result_set = sigm_db_cursor.fetchall()
+    return result_set
+
+
+# Query LOG database
+def log_db_query(sql_exp):
+    log_db_cursor.execute(sql_exp)
+    result_set = log_db_cursor.fetchall()
     return result_set
