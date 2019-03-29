@@ -110,14 +110,7 @@ def scalar_data(result_set):
 
 
 # Query SIGM database
-def sigm_db_query(sql_exp):
-    sigm_db_cursor.execute(sql_exp)
-    result_set = sigm_db_cursor.fetchall()
-    return result_set
-
-
-# Query LOG database
-def log_db_query(sql_exp):
-    log_db_cursor.execute(sql_exp)
-    result_set = log_db_cursor.fetchall()
+def sql_query(sql_exp, cursor):
+    cursor.execute(sql_exp)
+    result_set = cursor.fetchall()
     return result_set
