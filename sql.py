@@ -1,27 +1,13 @@
-import os
 import psycopg2.extensions
-import __main__
-
+from files import dev_check
 
 # PostgreSQL DB connection configs
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 
 
-# Check whether app should reference dev or prod server/db
-def dev_check():
-    raw_filename = os.path.basename(__main__.__file__)
-    removed_extension = raw_filename.split('.')[0]
-    last_word = removed_extension.split('_')[-1]
-    if last_word == 'DEV':
-        return True
-    else:
-        return False
-
-
 # Initialize production DB connection, listen cursor and query cursor
 def sigm_connect(channel=None):
-    global sigm_connection, sigm_db_cursor
     if dev_check():
         host = '192.168.0.57'
         dbname = 'DEV'
@@ -44,7 +30,6 @@ def sigm_connect(channel=None):
 
 # Initialize log DB connection, listen cursor and query cursor
 def log_connect():
-    global log_connection, log_db_cursor
     if dev_check():
         host = '192.168.0.57'
     else:
@@ -57,34 +42,6 @@ def log_connect():
     print(f'Log cursor open on DB LOG at host {host}')
 
     return log_connection, log_db_cursor
-
-
-# Return containing folder path
-def get_parent():
-    script_path = os.path.realpath(__main__.__file__)
-    parent_path = os.path.abspath(os.path.join(script_path, os.pardir))
-    return parent_path
-
-
-# Check for and add SQL files for main file
-def add_sql_files():
-    parent_path = get_parent()
-    sql_folder = parent_path + '\\SUPPORTING FUNCTIONS'
-    # TODO : Add DEV folder
-    sigm_folder = sql_folder + '\\SIGM'
-    log_folder = sql_folder + '\\LOG'
-    sql_folders = [sigm_folder, log_folder]
-    for folder in sql_folders:
-        if os.path.exists(folder):
-            for file in os.listdir(folder):
-                if file.endswith(".sql"):
-                    file_path = folder + f'\\{file}'
-                    with open(file_path, 'r') as sql_file:
-                        if folder == sigm_folder:
-                            sigm_db_cursor.execute(sql_file.read())
-                        elif folder == log_folder:
-                            log_db_cursor.execute(sql_file.read())
-                        print(f'{file} added.')
 
 
 # Convert tabular query result to list (2D array)
@@ -114,3 +71,8 @@ def sql_query(sql_exp, cursor):
     cursor.execute(sql_exp)
     result_set = cursor.fetchall()
     return result_set
+
+
+if __name__ == "__main__":
+    sigm_connect()
+    log_connect()
