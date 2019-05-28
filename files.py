@@ -1,6 +1,5 @@
 import os
 import __main__
-from sql import sigm_connect, log_connect
 
 
 # Check whether app should reference dev or prod server/db
@@ -22,7 +21,7 @@ def get_parent():
 
 
 # Check for and add SQL files for main file
-def add_sql_files():
+def add_sql_files(config):
     parent_path = get_parent()
     sql_folder = parent_path + '\\files\\sql'
     type_folder = sql_folder + '\\dev' if dev_check() else sql_folder + '\\prod'
@@ -36,15 +35,12 @@ def add_sql_files():
                     file_path = folder + f'\\{file}'
                     with open(file_path, 'r') as sql_file:
                         if folder == sigm_folder:
-                            sigm_connection, sigm_db_cursor = sigm_connect()
-                            sigm_db_cursor.execute(sql_file.read())
-                            sigm_connection.close()
+                            config.sigm_db_cursor.execute(sql_file.read())
                         elif folder == log_folder:
-                            log_connection, log_db_cursor = log_connect()
-                            log_db_cursor.execute(sql_file.read())
-                            log_connection.close()
+                            config.log_db_cursor.execute(sql_file.read())
                         print(f'{file} added.')
 
 
 if __name__ == "__main__":
-    add_sql_files()
+    dev_check()
+    get_parent()

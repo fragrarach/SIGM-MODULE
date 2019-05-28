@@ -1,5 +1,5 @@
 import psycopg2.extensions
-from files import dev_check
+from . import files
 
 # PostgreSQL DB connection configs
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
@@ -8,7 +8,7 @@ psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 
 # Initialize production DB connection, listen cursor and query cursor
 def sigm_connect(channel=None):
-    if dev_check():
+    if files.dev_check():
         host = '192.168.0.57'
         dbname = 'DEV'
     else:
@@ -21,7 +21,7 @@ def sigm_connect(channel=None):
     if channel:
         sigm_listen = sigm_connection.cursor()
         sigm_listen.execute(f"LISTEN {channel};")
-        print(f'Listening to channel {channel} on DB {dbname} at host {host}')
+        print(f'Listen channel {channel} open on DB {dbname} at host {host}')
     sigm_db_cursor = sigm_connection.cursor()
     print(f'SIGM cursor open on DB {dbname} at host {host}')
 
@@ -30,7 +30,7 @@ def sigm_connect(channel=None):
 
 # Initialize log DB connection, listen cursor and query cursor
 def log_connect():
-    if dev_check():
+    if files.dev_check():
         host = '192.168.0.57'
     else:
         host = '192.168.0.250'
