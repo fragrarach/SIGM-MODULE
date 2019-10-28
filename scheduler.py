@@ -71,7 +71,7 @@ def schedule_handler(now):
         if configuration.config.TASK_SCHEDULE[0]['weekday'] == now.weekday():
             then += datetime.timedelta(weeks=1)
         else:
-            while then.weekday() != config.TASK_SCHEDULE[0]['weekday']:
+            while then.weekday() != configuration.config.TASK_SCHEDULE[0]['weekday']:
                 then += datetime.timedelta(days=1)
     else:
         then = now + datetime.timedelta(days=1)

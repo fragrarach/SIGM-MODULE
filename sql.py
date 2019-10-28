@@ -48,23 +48,26 @@ def log_connect():
 # Convert tabular query result to list (2D array)
 def tabular_data(result_set):
     lines = []
-    for row in result_set:
-        line = []
-        for cell in row:
-            if type(cell) == str:
-                cell = cell.strip()
-            line.append(cell)
-        lines.append(line)
+    if result_set:
+        for row in result_set:
+            line = []
+            for cell in row:
+                if type(cell) == str:
+                    cell = cell.strip()
+                line.append(cell)
+            lines.append(line)
     return lines
 
 
 # Convert scalar query result to singleton variable of any data type
 def scalar_data(result_set):
-    for row in result_set:
-        for cell in row:
-            if type(cell) == str:
-                cell = cell.strip()
-            return cell
+    if result_set:
+        if len(result_set) == 1:
+            if len(result_set[0]) == 1:
+                value = result_set[0][0]
+                if type(value) == str:
+                    value = value.strip()
+                return value
 
 
 # Query SIGM database
