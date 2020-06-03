@@ -5,17 +5,17 @@ from . import configuration
 
 
 def start_scheduler(task):
-    secs = set_timer()
+    secs = set_timer(task)
     if secs > 0:
         extended_task = extend_task(task)
         schedule_timer = Timer(secs, extended_task)
         schedule_timer.start()
 
 
-def set_timer():
+def set_timer(task):
     now = datetime.datetime.today()
 
-    minute, hour, day, month, year = schedule_handler(now)
+    minute, hour, day, month, year = schedule_handler(now, task)
 
     then = now.replace(year=year, month=month, day=day, hour=hour, minute=minute, second=0, microsecond=0)
 
@@ -34,9 +34,9 @@ def extend_task(task):
     return extended_task
 
 
-def schedule_handler(now):
+def schedule_handler(now, task):
     then = now
-    for schedule in configuration.config.TASK_SCHEDULE:
+    for schedule in configuration.config.TASK_SCHEDULE[task.__name__]:
         if 'weekday' in schedule.keys():
             if now.weekday() == schedule['weekday']:
                 if now.hour < schedule['hour'] or (now.hour == schedule['hour'] and now.minute < schedule['minute']):
@@ -67,19 +67,19 @@ def schedule_handler(now):
                 print(f"Scheduling task for this {schedule['name']}")
                 return minute, hour, day, month, year
 
-    if 'weekday' in configuration.config.TASK_SCHEDULE[0].keys():
-        if configuration.config.TASK_SCHEDULE[0]['weekday'] == now.weekday():
+    if 'weekday' in configuration.config.TASK_SCHEDULE[task.__name__][0].keys():
+        if configuration.config.TASK_SCHEDULE[task.__name__][0]['weekday'] == now.weekday():
             then += datetime.timedelta(weeks=1)
         else:
-            while then.weekday() != configuration.config.TASK_SCHEDULE[0]['weekday']:
+            while then.weekday() != configuration.config.TASK_SCHEDULE[task.__name__][0]['weekday']:
                 then += datetime.timedelta(days=1)
     else:
         then = now + datetime.timedelta(days=1)
 
-    minute = configuration.config.TASK_SCHEDULE[0]['minute']
-    hour = configuration.config.TASK_SCHEDULE[0]['hour']
+    minute = configuration.config.TASK_SCHEDULE[task.__name__][0]['minute']
+    hour = configuration.config.TASK_SCHEDULE[task.__name__][0]['hour']
     day = then.day
     month = then.month
     year = then.year
-    print(f"Scheduling task for next {configuration.config.TASK_SCHEDULE[0]['name']}")
+    print(f"Scheduling task for next {configuration.config.TASK_SCHEDULE[task.__name__][0]['name']}")
     return minute, hour, day, month, year
